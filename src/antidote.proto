@@ -14,6 +14,7 @@ enum CRDT_type {
     RWSET = 10;
     RRMAP = 11;
     FATCOUNTER = 12;
+    TAG = 13;
 }
 
 
@@ -156,6 +157,7 @@ message ApbReadObjects {
 message ApbUpdateOp {
     required ApbBoundObject boundobject = 1;
     required ApbUpdateOperation operation = 2;
+    optional ApbMapUpdate tagoperation = 3;
 }
 
 message ApbUpdateOperation { // TODO use this above
@@ -169,6 +171,11 @@ message ApbUpdateOperation { // TODO use this above
 
 // Objects to be updated
 message ApbUpdateObjects {
+    repeated ApbUpdateOp updates = 1;
+    required bytes transaction_descriptor = 2;
+}
+
+message ApbUpdateTags {
     repeated ApbUpdateOp updates = 1;
     required bytes transaction_descriptor = 2;
 }

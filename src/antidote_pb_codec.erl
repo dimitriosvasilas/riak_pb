@@ -174,11 +174,18 @@ encode_static_update_objects(Clock, Properties, Updates) ->
 
 
 decode_update_op(Obj) ->
-  #apbupdateop{boundobject = Object, operation = Operation}=Obj,
+  #apbupdateop{boundobject = Object, operation = Operation, tagoperation = Tagoperation}=Obj,
   {Op, OpParam} = decode_update_operation(Operation),
-  {decode_bound_object(Object), Op, OpParam}.
+  case Tagoperation of
+    undefined ->
+        {decode_bound_object(Object), Op, OpParam};
+    _ ->
+      TagParam = decode_map_update(Tagoperation),
+      {decode_bound_object(Object), Op, OpParam, TagParam}
+    end.
 
-
+encode_update_op({Object, Op, Param, TagParam}) ->
+  encode_update_op(Object, Op, Param, TagParam);
 encode_update_op({Object, Op, Param}) ->
   encode_update_op(Object, Op, Param).
 encode_update_op(Object, Op, Param) ->
@@ -187,6 +194,12 @@ encode_update_op(Object, Op, Param) ->
   Operation = encode_update_operation(Type, {Op, Param}),
   #apbupdateop{boundobject = EncObject, operation = Operation}.
 
+encode_update_op(Object, Op, Param, TagParam) ->
+  {_Key, Type, _Bucket} = Object,
+  EncObject = encode_bound_object(Object),
+  Operation = encode_update_operation(Type, {Op, Param}),
+  TagOperation = encode_map_update(TagParam),
+  #apbupdateop{boundobject = EncObject, operation = Operation, tagoperation = TagOperation}.
 
 
 encode_update_objects(Updates, TxId) ->
@@ -194,8 +207,6 @@ encode_update_objects(Updates, TxId) ->
     encode_update_op(Update) end,
     Updates),
   #apbupdateobjects{updates = EncUpdates, transaction_descriptor = TxId}.
-
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%
@@ -301,7 +312,8 @@ encode_type(antidote_crdt_integer) -> 'INTEGER';
 encode_type(antidote_crdt_gmap) -> 'GMAP';
 encode_type(antidote_crdt_map_aw) -> 'AWMAP';
 encode_type(antidote_crdt_set_rw) -> 'RWSET';
-encode_type(antidote_crdt_map_rr) -> 'RRMAP'.
+encode_type(antidote_crdt_map_rr) -> 'RRMAP';
+encode_type(antidote_crdt_tag) -> 'TAG'.
 
 
 decode_type('COUNTER') -> antidote_crdt_counter;
@@ -313,7 +325,8 @@ decode_type('INTEGER') -> antidote_crdt_integer;
 decode_type('GMAP') -> antidote_crdt_gmap;
 decode_type('AWMAP') -> antidote_crdt_map_aw;
 decode_type('RWSET') -> antidote_crdt_set_rw;
-decode_type('RRMAP') -> antidote_crdt_map_rr.
+decode_type('RRMAP') -> antidote_crdt_map_rr;
+decode_type('TAG') -> antidote_crdt_tag.
 
 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -323,7 +336,7 @@ decode_type('RRMAP') -> antidote_crdt_map_rr.
 encode_update_operation(antidote_crdt_counter, Op_Param) ->
   #apbupdateoperation{counterop = encode_counter_update(Op_Param)};
 encode_update_operation(antidote_crdt_fat_counter, Op_Param) ->
-  #apbupdateoperation{counterop = encode_counter_update(Op_Param)};  
+  #apbupdateoperation{counterop = encode_counter_update(Op_Param)};
 encode_update_operation(antidote_crdt_orset, Op_Param) ->
   #apbupdateoperation{setop = encode_set_update(Op_Param)};
 encode_update_operation(antidote_crdt_set_rw, Op_Param) ->
@@ -339,7 +352,9 @@ encode_update_operation(antidote_crdt_gmap, Op_Param) ->
 encode_update_operation(antidote_crdt_map_aw, Op_Param) ->
   #apbupdateoperation{mapop = encode_map_update(Op_Param)};
 encode_update_operation(antidote_crdt_map_rr, Op_Param) ->
-  #apbupdateoperation{mapop = encode_map_update(Op_Param)};  
+  #apbupdateoperation{mapop = encode_map_update(Op_Param)};
+encode_update_operation(antidote_crdt_tag, Op_Param) ->
+  #apbupdateoperation{setop = encode_set_update(Op_Param)};
 encode_update_operation(Type, _Op) ->
   throw({invalid_type, Type}).
 
@@ -371,7 +386,7 @@ encode_read_object_resp(antidote_crdt_mvreg, Vals) ->
 encode_read_object_resp(antidote_crdt_counter, Val) ->
     #apbreadobjectresp{counter=#apbgetcounterresp{value=Val}};
 encode_read_object_resp(antidote_crdt_fat_counter, Val) ->
-    #apbreadobjectresp{counter=#apbgetcounterresp{value=Val}};    
+    #apbreadobjectresp{counter=#apbgetcounterresp{value=Val}};
 encode_read_object_resp(antidote_crdt_orset, Val) ->
     #apbreadobjectresp{set=#apbgetsetresp{value=Val}};
 encode_read_object_resp(antidote_crdt_set_rw, Val) ->
@@ -714,7 +729,3 @@ crdt_encode_decode_test() ->
 
 
 -endif.
-
-
-
-
