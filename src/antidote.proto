@@ -175,11 +175,6 @@ message ApbUpdateObjects {
     required bytes transaction_descriptor = 2;
 }
 
-message ApbUpdateTags {
-    repeated ApbUpdateOp updates = 1;
-    required bytes transaction_descriptor = 2;
-}
-
 // Start Transaction
 message ApbStartTransaction {
     optional bytes timestamp = 1;
