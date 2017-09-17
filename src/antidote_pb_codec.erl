@@ -155,7 +155,15 @@ decode_txn_properties(_Properties) ->
 encode_bound_object({Key, Type, Bucket}) ->
   encode_bound_object(Key, Type, Bucket).
 encode_bound_object(Key, Type, Bucket) ->
-  #apbboundobject{key = Key, type = encode_type(Type), bucket = Bucket}.
+  #apbboundobject{key = filter_key(Key), type = encode_type(Type), bucket = Bucket}.
+
+filter_key(Key) ->
+  case re:run(Key, "[\s]?_[^\s]*") of
+    nomatch ->
+      Key;
+    {match, _} ->
+      erlang:error("Forbidden character")
+  end.
 
 decode_bound_object(Obj) ->
   #apbboundobject{key = Key, type = Type, bucket = Bucket} = Obj,
