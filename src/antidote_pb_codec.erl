@@ -158,6 +158,8 @@ encode_bound_object(Key, Type, Bucket) ->
   #apbboundobject{key = filter_key(Key), type = encode_type(Type), bucket = Bucket}.
 
 filter_key(Key) ->
+  io:format("filter_key ~p~n", [Key]),
+  io:format("filter_key ~p~n", [re:run(Key, "[\s]?_[^\s]*")]),
   case re:run(Key, "[\s]?_[^\s]*") of
     nomatch ->
       Key;
