@@ -302,6 +302,7 @@ encode_type(antidote_crdt_gmap) -> 'GMAP';
 encode_type(antidote_crdt_map_aw) -> 'AWMAP';
 encode_type(antidote_crdt_set_rw) -> 'RWSET';
 encode_type(antidote_crdt_map_rr) -> 'RRMAP';
+encode_type(antidote_crdt_ordered_map_rr) -> 'ORDRRMAP';
 encode_type(antidote_crdt_flag_ew) -> 'FLAG_EW';
 encode_type(antidote_crdt_flag_dw) -> 'FLAG_DW'.
 
@@ -316,6 +317,7 @@ decode_type('GMAP') -> antidote_crdt_gmap;
 decode_type('AWMAP') -> antidote_crdt_map_aw;
 decode_type('RWSET') -> antidote_crdt_set_rw;
 decode_type('RRMAP') -> antidote_crdt_map_rr;
+decode_type('ORDRRMAP') -> antidote_crdt_ordered_map_rr;
 decode_type('FLAG_EW') -> antidote_crdt_flag_ew;
 decode_type('FLAG_DW') -> antidote_crdt_flag_dw.
 
@@ -346,6 +348,8 @@ encode_update_operation(antidote_crdt_gmap, Op_Param) ->
 encode_update_operation(antidote_crdt_map_aw, Op_Param) ->
   #apbupdateoperation{mapop = encode_map_update(Op_Param)};
 encode_update_operation(antidote_crdt_map_rr, Op_Param) ->
+  #apbupdateoperation{mapop = encode_map_update(Op_Param)};
+encode_update_operation(antidote_crdt_ordered_map_rr, Op_Param) ->
   #apbupdateoperation{mapop = encode_map_update(Op_Param)};
 encode_update_operation(antidote_crdt_flag_ew, Op_Param) ->
   #apbupdateoperation{flagop = encode_flag_update(Op_Param)};
@@ -399,6 +403,8 @@ encode_read_object_resp(antidote_crdt_gmap, Val) ->
 encode_read_object_resp(antidote_crdt_map_aw, Val) ->
     #apbreadobjectresp{map = encode_map_get_resp(Val)};
 encode_read_object_resp(antidote_crdt_map_rr, Val) ->
+    #apbreadobjectresp{map = encode_map_get_resp(Val)};
+encode_read_object_resp(antidote_crdt_ordered_map_rr, Val) ->
     #apbreadobjectresp{map = encode_map_get_resp(Val)};
 encode_read_object_resp(antidote_crdt_flag_ew, Val) ->
     #apbreadobjectresp{flag = #apbgetflagresp{value = Val}};
@@ -731,6 +737,14 @@ crdt_encode_decode_test() ->
   ?TestCrdtResponseCodec(antidote_crdt_map_aw, map, [
     {{<<"a">>, antidote_crdt_integer}, 42}
   ]),
+
+  % ordered_map
+  ?TestCrdtOperationCodec(antidote_crdt_ordered_map_rr, update, [
+    {{<<"a">>, antidote_crdt_integer}, {set, 42}},
+    {{<<"b">>, antidote_crdt_orset}, {add, <<"x">>}}]),
+  ?TestCrdtOperationCodec(antidote_crdt_ordered_map_rr, remove, [
+    {<<"a">>, antidote_crdt_integer},
+    {<<"b">>, antidote_crdt_integer}]),
 
   % gmap
   ?TestCrdtOperationCodec(antidote_crdt_gmap, update, {{<<"key">>, antidote_crdt_integer}, {set, 42}}),
