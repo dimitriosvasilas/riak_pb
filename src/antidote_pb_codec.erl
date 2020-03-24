@@ -78,6 +78,8 @@ encode(read_object_resp, Resp) ->
   encode_read_object_resp(Resp);
 encode(static_read_objects_response, {ok, Results, CommitTime}) ->
   encode_static_read_objects_response(Results, CommitTime);
+encode(read_map_keys_range, {Objects, TxId}) ->
+  encode_read_map_keys_range(Objects, TxId);
 encode(error_code, Code) ->
   encode_error_code(Code);
 encode(_Other, _) ->
@@ -279,6 +281,18 @@ encode_read_objects(Objects, TxId) ->
     encode_bound_object(Object) end,
     Objects),
   #apbreadobjects{boundobjects = BoundObjects, transaction_descriptor = TxId}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% ordered map read range
+
+encode_read_map_keys_range(Objects, TxId) ->
+  BoundObjects = lists:map(fun(Object) ->
+    encode_bound_object(Object) end,
+    Objects),
+    #apbreadobjects{boundobjects = BoundObjects, transaction_descriptor = TxId}.
+    
+
 
 %%%%%%%%%%%%%%%%%%%
 %% Crdt types
